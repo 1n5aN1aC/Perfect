@@ -1,23 +1,39 @@
 # Echo client program
 import socket
 import json
+import sys
 from StringIO import StringIO
-def as_complex(dct):
-    return complex(dct['packet'], dct['data'])
-    return dct
-dataToSend = StringIO()
-
-json.dump([{"id":1, "stuff":"streaming API"}], dataToSend)
-
-HOST = '127.0.0.1'    # The remote host
-PORT = 50007              # The same port as used by the server
+from random import randrange
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((HOST, PORT))
-s.sendall( dataToSend.getvalue() )
+DEBUG = True
+
+def connectToServer():
+	HOST = '127.0.0.1'   # The remote host
+	PORT = 8080          # The same port as used by the server
+	s.connect((HOST, PORT))
+	if DEBUG:
+		print 'connected to server'
+
+def sendData(id, payload):
+	dataToSend = StringIO()
+	json.dump({"id":id, "stuff":payload}, dataToSend)
+	s.sendall( dataToSend.getvalue() )
+	if DEBUG:
+		print 'sent to server: ', dataToSend.getvalue()
+
+def shutDown():
+	s.close()
+	if DEBUG:
+		print 'closed socket.  exiting now'
+	sys.exit(0)
+
+connectToServer()
+sendData(1, 'lol')
+
 data = s.recv(1024)
-s.close()
 
-print 'Received', repr(data)
 jdata = json.loads(data)
+if DEBUG:
+	print 'got data:  id: ', jdata['id'], ' stuff: ', jdata['stuff']
 
-print 'Parsed', repr(jdata)
+shutDown();
