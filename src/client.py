@@ -14,9 +14,9 @@ def connectToServer():
 	if DEBUG:
 		print 'connected to server'
 
-def sendData(id, payload):
+def sendData(id, dataSend):
 	dataToSend = StringIO()
-	json.dump({"id":id, "stuff":payload}, dataToSend)
+	json.dump({"id":id, "payload":dataSend}, dataToSend)
 	s.sendall( dataToSend.getvalue() )
 	if DEBUG:
 		print 'sent to server: ', dataToSend.getvalue()
@@ -28,12 +28,12 @@ def shutDown():
 	sys.exit(0)
 
 connectToServer()
-sendData(1, 'lol')
+sendData(3, 1456)
 
 data = s.recv(1024)
 
 jdata = json.loads(data)
 if DEBUG:
-	print 'got data:  id: ', jdata['id'], ' stuff: ', jdata['stuff']
+	print 'got data:  id: ', jdata['id'], ' payload: ', jdata['payload']
 
 shutDown();

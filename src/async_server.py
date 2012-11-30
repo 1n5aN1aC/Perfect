@@ -2,9 +2,30 @@ import asyncore
 import socket
 import json
 import signal
+import threading
+from time import sleep
+from sys import stdout
 from StringIO import StringIO
+
+lock = lock()
 DEBUG = True
 connectionList = []
+
+def signal_handler(signum, frame):
+	print 'Signal handler called with signal', signum
+	os.kill(pid, sig)
+
+def dealKeepAlive(address):
+	print 'received keep-alive from: ', address
+
+def dealRangeReq(address, quantity):
+	print 'received request for ', quantity, ' numbers from: ', address
+	lock.aquire()
+	print 'doing stuff'
+	lock.release()
+	
+def dealNumberFound(address, numberFound):
+	print 'client ', address, ' claims ', numberFound, ' is a perfect number!'
 
 class EchoHandler(asyncore.dispatcher_with_send):
 	def setAddr(self, addr):
@@ -12,8 +33,20 @@ class EchoHandler(asyncore.dispatcher_with_send):
 
 	def handle_read(self):
 		data = self.recv(8192)
+		#assuming we actually received SOMETHING.....
 		if data:
-			print 'received %s from %s' % (data, self.addr)
+			#lets load up that json!  (DOES NOT DEAL WITH INVALID JSON!)
+			jdata = json.loads(data)
+			if jdata['id'] == 0:
+				dealKeepAlive(self.addr)
+			elif jdata['id'] == 1:
+				quantity = jdata['payload']
+				dealRangeReq(self.addr, quantity)
+			elif jdata['id'] == 3:
+				numberFound = jdata['payload']
+				dealNumberFound(self.addr, numberFound)
+			else:
+				print 'something went wrong.'
 			self.send(data)
 
 class EchoServer(asyncore.dispatcher):
@@ -37,5 +70,12 @@ class EchoServer(asyncore.dispatcher):
 			handler.setAddr(addr)
 			connectionList.append(self)
 
+#set up signal handler(s)
+signal.signal(signal.SIGINT, signal_handler)
+#signal.signal(signal.SIGHUP, signal_handler)
+#signal.signal(signal.SIGQUIT, signal_handler)
+
+			
 server = EchoServer('localhost', 8080)
 asyncore.loop()
+
