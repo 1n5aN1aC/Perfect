@@ -7,9 +7,9 @@ from time import sleep
 from sys import stdout
 from StringIO import StringIO
 
-lock = lock()
 DEBUG = True
-connectionList = []
+connectionClassList = []
+connectionSocketList = []
 
 def signal_handler(signum, frame):
 	print 'Signal handler called with signal', signum
@@ -20,10 +20,7 @@ def dealKeepAlive(address):
 
 def dealRangeReq(address, quantity):
 	print 'received request for ', quantity, ' numbers from: ', address
-	lock.aquire()
-	print 'doing stuff'
-	lock.release()
-	
+
 def dealNumberFound(address, numberFound):
 	print 'client ', address, ' claims ', numberFound, ' is a perfect number!'
 
@@ -47,6 +44,8 @@ class EchoHandler(asyncore.dispatcher_with_send):
 				dealNumberFound(self.addr, numberFound)
 			else:
 				print 'something went wrong.'
+				
+			#for testing, send everything back to client
 			self.send(data)
 
 class EchoServer(asyncore.dispatcher):
@@ -68,14 +67,14 @@ class EchoServer(asyncore.dispatcher):
 				print 'Incoming connection from %s' % repr(addr)
 			handler = EchoHandler(sock)
 			handler.setAddr(addr)
-			connectionList.append(self)
+			connectionClassList.append(self)
+			connectionSocketList.append(sock)
+			
 
 #set up signal handler(s)
 signal.signal(signal.SIGINT, signal_handler)
 #signal.signal(signal.SIGHUP, signal_handler)
 #signal.signal(signal.SIGQUIT, signal_handler)
 
-			
 server = EchoServer('localhost', 8080)
 asyncore.loop()
-
