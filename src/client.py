@@ -28,7 +28,7 @@ def shutDown():
 	sys.exit(0)
 
 connectToServer()
-sendData(3, 1456)
+sendData(1, 1456)
 
 data = s.recv(1024)
 
@@ -36,4 +36,4 @@ jdata = json.loads(data)
 if DEBUG:
 	print 'got data:  id: ', jdata['id'], ' payload: ', jdata['payload']
 
-shutDown();
+shutDown()

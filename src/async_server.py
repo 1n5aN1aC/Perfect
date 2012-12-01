@@ -16,17 +16,23 @@ def signal_handler(signum, frame):
 	os.kill(pid, sig)
 
 def dealKeepAlive(address):
-	print 'received keep-alive from: ', address
+	print 'received keep-alive from:', address
+	#echo the ping back
+	self.send(data)
 
-def dealRangeReq(address, quantity):
-	print 'received request for ', quantity, ' numbers from: ', address
+def dealRangeReq(socket, quantity):
+	print 'received request for', quantity, 'numbers from:', socket
+	socket.send(data)
 
 def dealNumberFound(address, numberFound):
-	print 'client ', address, ' claims ', numberFound, ' is a perfect number!'
+	print 'client', address[0],':',address[1], 'claims that', numberFound, 'is a perfect number!'
 
 class EchoHandler(asyncore.dispatcher_with_send):
 	def setAddr(self, addr):
 		self.addr = addr
+		
+	def setSock(self, sock):
+		self.sock = sock
 
 	def handle_read(self):
 		data = self.recv(8192)
@@ -38,7 +44,7 @@ class EchoHandler(asyncore.dispatcher_with_send):
 				dealKeepAlive(self.addr)
 			elif jdata['id'] == 1:
 				quantity = jdata['payload']
-				dealRangeReq(self.addr, quantity)
+				dealRangeReq(self.sock, quantity)
 			elif jdata['id'] == 3:
 				numberFound = jdata['payload']
 				dealNumberFound(self.addr, numberFound)
@@ -67,14 +73,15 @@ class EchoServer(asyncore.dispatcher):
 				print 'Incoming connection from %s' % repr(addr)
 			handler = EchoHandler(sock)
 			handler.setAddr(addr)
+			handler.setSock(sock)
 			connectionClassList.append(self)
 			connectionSocketList.append(sock)
 			
 
 #set up signal handler(s)
 signal.signal(signal.SIGINT, signal_handler)
-#signal.signal(signal.SIGHUP, signal_handler)
-#signal.signal(signal.SIGQUIT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGABRT, signal_handler)
 
 server = EchoServer('localhost', 8080)
 asyncore.loop()
