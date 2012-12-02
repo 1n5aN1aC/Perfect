@@ -20,6 +20,7 @@ connectionSocketList = []
 def signal_handler(signum, frame):
 	server.sendKill();
 	print 'SHUTDOWN!  Reason:', signum
+	time.sleep(1)
 	exit()
 
 #Returns a json-formated string based on the packet ID and packet payload
@@ -37,8 +38,8 @@ def dealKeepAlive(self, payload):
 #Send them however many they asked for
 def dealRangeReq(self, quantity):
 	global currNum
-	print 'received request for', quantity, 'numbers from:', self.addr
-	self.send( createJson(self, 2, quantity) )
+	print 'replying to request for', quantity, 'numbers from:', self.addr
+	self.send( createJson(self, 2, currNum) )
 	currNum += quantity
 
 #The Client sent us a number that they say is a perfect number!
@@ -58,7 +59,7 @@ class PacketHandler(asyncore.dispatcher_with_send):
 
 	def handle_read(self):
 		jdata = self.recv(8192)
-		print jdata
+		#print jdata
 		#assuming we actually received SOMETHING.....
 		if jdata:
 			#lets load up that json!  (DOES NOT DEAL WITH INVALID JSON!)
@@ -111,6 +112,7 @@ class AsyncServer(asyncore.dispatcher):
 
 	def handle_close():
 		self.close()
+		print self.addr, 'has disconnecteed!'
 		#for _socketobject in connectionSocketList:
 		#	if _socketobject.getpeername()[0] == self.sock.getpeername()[0]
 		#		print 'derp'

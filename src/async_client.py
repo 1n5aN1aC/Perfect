@@ -14,36 +14,47 @@ PORT = 2541          # The same port as used by the server. Default 2541
 
 each = 0
 currNum = 0
-maxNum = 0
 
 #deal with signals
 def signal_handler(signum, frame):
 	print 'SHUTDOWN!  Reason:', signum
 	client.t.stop()
+	time.sleep(1)
 	exit()
-
-#Returns a json-formated string based on the packet ID and packet payload
-def createJson(self, id, payload):
-	lol = json.dumps( {"id":id, "payload":payload} )
-	return lol
 
 def dealFoundPerfect(self, num):
 	print 'found perfect.  need to send'
 
-def findPerfectNumbers(self, min, max):
+def findPerfectNumbers(self, min, disable):
+	global each
 	n = min
+	max = min+each
 	while n < max:
 		factors = [1]
 		[factors.append(i) for i in range(2,n+1) if n%i == 0]
-		if sum(factors) == 2*n: dealFoundPerfect(self, n)
+		if sum(factors) == 2*n:
+			if disable != 'True':
+				dealFoundPerfect(self, n)
 		n += 1
+
+#loops through, calculating how many perfect numbers your computer can find in 15 seconds.
+#it checks how many you can numbers near 100,000 your computer can check in 15 seconds
+def calcSpeed(self):
+	global each
+	print 'we are now checking how fast your computer is.'
+	print 'This should take exactly 15 seconds...'
+	t1 = time.time()
+	t2 = time.time()
+	while t2 - t1 < 15:
+		findPerfectNumbers('derp', 100000, 'True')
+		t2 = time.time()
+		each += 1
+	each = each * 5
+	print 'your computer will do', each, 'numbers at a time.'
 
 #yup, server is still there!
 def dealKeepAlive(self, payload):
 	print 'got keep-alive back from server!'
-
-def dealRangeAggignment(self, beginning):
-	print 'derp'
 
 #main class which handles the async part of the client.
 #It then calls out, and starts up the actuall processing thread
@@ -60,7 +71,7 @@ class AsyncClient(asyncore.dispatcher):
 
 	#adds the requested json to the send buffer
 	def sendJson(self, id, payload):
-		self.buffer = json.dumps( {"id":id, "payload":payload} )
+		self.send ( json.dumps( {"id":id, "payload":payload} ) )
 
 	#got the message to kill self
 	#Also, make sure we kill the child thread too
@@ -81,7 +92,7 @@ class AsyncClient(asyncore.dispatcher):
 				dealKeepAlive(self, lol)
 			elif data['id'] == 2:
 				beginning = data['payload']
-				dealRangeAggignment(self, beginning)
+				self.t.dealRangeAggignment(beginning)
 			elif data['id'] == 9:
 				reason = data['payload']
 				signal_handler(reason, 2)
@@ -92,11 +103,11 @@ class AsyncClient(asyncore.dispatcher):
 	#Go ahead and send the data
 	#Caveots:  forces us to write the entire json string imediently,
 	#Else bad things will happen (sending half the data, then the other half)
-	def handle_write(self):
-		sent = self.send(self.buffer)
-		self.buffer = self.buffer[sent:]
-		if sent != 0:
-			print "sent "+str(sent)+" bytes to server!"
+	#def handle_write(self):
+	#	sent = self.send(self.buffer)
+	#	self.buffer = self.buffer[sent:]
+		#if sent != 0:
+		#	print "sent "+str(sent)+" bytes to server!"
 
 #Thread that actually does all the processing
 class SenderThread(threading.Thread):
@@ -113,17 +124,22 @@ class SenderThread(threading.Thread):
 
 	#What the thread actually does
 	def run(self):
-		counter = 0
-		while self._stop == False:
-			self.client.sendJson(1, 43)
-			time.sleep(3)
+		global each
+		self.client.sendJson(1, each)
+		
+	def dealRangeAggignment(self, beginning):
+		global currNum
+		currNum = beginning
+		print 'now fiding perfect numbers between', beginning, 'and', beginning+each
+		findPerfectNumbers(self, beginning, 'false')
+		self.run()
 
 #set up signal handler(s)
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGABRT, signal_handler)
 
-findPerfectNumbers('derp' ,0, 1000)
+calcSpeed('derp')
 
 #ok, now actually start up the client!
 client = AsyncClient(HOST)
