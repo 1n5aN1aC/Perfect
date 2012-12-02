@@ -51,8 +51,8 @@ class PacketHandler(asyncore.dispatcher_with_send):
 		self.addr = address
 
 	#probably not needed anymore
-	def setSock(self, socket):
-		self.sock = socket
+	def setSock(self, sock2):
+		self.sock = sock2
 
 	def handle_read(self):
 		jdata = self.recv(8192)
@@ -83,9 +83,12 @@ class AsyncServer(asyncore.dispatcher):
 		self.bind((host, port))
 		self.listen(5)
 
-	def sendKill():
-		for each in connectionSocketList:
-			
+	#We have been told to shutdown!
+	#Make sure we send the shutdown packet first!
+	def sendKill(self):
+		for _socketobject in connectionSocketList:
+			_socketobject.send( createJson(self, 9, 'Server says SHUTDOWN!') )
+			print str( _socketobject.getpeername()[0] ) + ':' + str( _socketobject.getpeername()[1] ) + ' was sent the shutdown signal!'
 
 	#We got a client connection!
 	def handle_accept(self):
@@ -101,6 +104,11 @@ class AsyncServer(asyncore.dispatcher):
 			connectionClassList.append(self)
 			connectionSocketList.append(sock)
 
+	def handle_close():
+		self.close()
+		for _socketobject in connectionSocketList:
+		
+
 #set up signal handler(s)
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
@@ -108,4 +116,4 @@ signal.signal(signal.SIGABRT, signal_handler)
 
 #Run the event-driven server
 server = AsyncServer(HOST, PORT)
-asyncore.loop(3)
+asyncore.loop(1)

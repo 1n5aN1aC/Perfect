@@ -17,7 +17,7 @@ maxNum = 0
 
 #deal with signals
 def signal_handler(signum, frame):
-	print 'Signal handler called with signal:', signum
+	print 'SHUTDOWN!  Reason:', signum
 	client.t.stop()
 	exit()
 
@@ -30,6 +30,8 @@ def createJson(self, id, payload):
 def dealKeepAlive(self, payload):
 	print 'got keep-alive back from server!'
 
+#main class which handles the async part of the client.
+#It then calls out, and starts up the actuall processing thread
 class AsyncClient(asyncore.dispatcher):
 	buffer = ""
 	t = None
@@ -42,13 +44,18 @@ class AsyncClient(asyncore.dispatcher):
 		self.t = SenderThread(self)
 		self.t.start()
 
+	#adds the requested json to the send buffer
 	def sendJson(self, id, payload):
 		self.buffer = json.dumps( {"id":id, "payload":payload} )
 
+	#got the message to kill self
+	#Also, make sure we kill the child thread too
 	def handle_close(self):
 		self.close()
 		self.t.stop()
 
+	#Deals with any packets received
+	#Delegates them out to be processed
 	def handle_read(self):
 		jdata = self.recv(8192)
 		#assuming we actually received SOMETHING.....
@@ -77,6 +84,7 @@ class AsyncClient(asyncore.dispatcher):
 		if sent != 0:
 			print "sent "+str(sent)+" bytes to server!"
 
+#Thread that actually does all the processing
 class SenderThread(threading.Thread):
 	_stop = False
 
@@ -89,6 +97,7 @@ class SenderThread(threading.Thread):
 	def stop(self):
 		self._stop = True
 
+	#What the thread actually does
 	def run(self):
 		counter = 0
 		while self._stop == False:
@@ -100,5 +109,6 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGABRT, signal_handler)
 
+#ok, now actually start up the client!
 client = AsyncClient(HOST)
-asyncore.loop(3)
+asyncore.loop(1)
