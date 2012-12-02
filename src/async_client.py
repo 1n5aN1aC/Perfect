@@ -59,7 +59,7 @@ def calcSpeed(self):
 		findPerfectNumbers('derp', 100000, 'True')
 		t2 = time.time()
 		each += 1
-	each = each * 5
+	each = (each * 5) + 5
 	print 'your computer will do', each, 'numbers at a time.'
 
 #main class which handles the async part of the client.
