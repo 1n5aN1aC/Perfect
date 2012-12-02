@@ -11,3 +11,14 @@
 *.lai
 *.la
 *.a
+
+# visual studio
+*.filters
+*.user
+*.opensdf
+*.sln
+*.suo
+*.vcxproj
+*.sdf
+*.cproject
+*.project
