@@ -22,4 +22,13 @@
 *.sdf
 *.cproject
 *.project
-Debug/
+*.tlog
+*.bi
+*.obj
+*.pdb
+*.unsuccessfulbuild
+*.log
+*.ilk
+*.metagen
+*.manifest
+*.lastbuildstate
