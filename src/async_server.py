@@ -15,6 +15,7 @@ currNum = 0
 
 connectionClassList = []
 connectionSocketList = []
+perfectNumbersFound = []
 
 #deal with signals
 def signal_handler(signum, frame):
@@ -46,8 +47,21 @@ def dealRangeReq(self, quantity):
 #Amazing!  Make a note of this!
 def dealNumberFound(self, address, numberFound):
 	print 'client', address[0],':',address[1], 'claims that', numberFound, 'is a perfect number!'
+	perfectNumbersFound.append(numberFound)
 	sleep(1)
 	self.send( createJson(self, 0, "yup I got that") )
+	
+def dealReportFound(self):
+	print 'not implemented yet'
+	self.send( createJson(self, 5, "yup I got that") )
+
+def dealReportClients(self):
+	print 'not implemented yet'
+	self.send( createJson(self, 6, "yup I got that") )
+
+def dealReportNumber(self):
+	print 'not implemented yet'
+	self.send( createJson(self, 7, "yup I got that") )
 
 #Class For handling the event-driven server
 class PacketHandler(asyncore.dispatcher_with_send):
