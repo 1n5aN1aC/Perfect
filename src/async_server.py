@@ -50,6 +50,7 @@ class PacketHandler(asyncore.dispatcher_with_send):
 
 	def handle_read(self):
 		jdata = self.recv(8192)
+		print jdata
 		#assuming we actually received SOMETHING.....
 		if jdata:
 			#lets load up that json!  (DOES NOT DEAL WITH INVALID JSON!)
@@ -69,7 +70,7 @@ class PacketHandler(asyncore.dispatcher_with_send):
 
 #Class that sets up the event-drivin server
 #and passes data it receives to the PacketHandler() class
-class EchoServer(asyncore.dispatcher):
+class AsyncServer(asyncore.dispatcher):
 	def __init__(self, host, port):
 		asyncore.dispatcher.__init__(self)
 		self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -97,5 +98,5 @@ signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGABRT, signal_handler)
 
 #Run the event-driven server
-server = EchoServer('localhost', 2541)
+server = AsyncServer('localhost', 2541)
 asyncore.loop(3)
