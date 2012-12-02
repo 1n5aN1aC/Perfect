@@ -20,7 +20,7 @@ connectionSocketList = []
 def signal_handler(signum, frame):
 	server.sendKill();
 	print 'SHUTDOWN!  Reason:', signum
-	time.sleep(1)
+	sleep(1)
 	exit()
 
 #Returns a json-formated string based on the packet ID and packet payload
@@ -46,6 +46,7 @@ def dealRangeReq(self, quantity):
 #Amazing!  Make a note of this!
 def dealNumberFound(self, address, numberFound):
 	print 'client', address[0],':',address[1], 'claims that', numberFound, 'is a perfect number!'
+	sleep(1)
 	self.send( createJson(self, 0, "yup I got that") )
 
 #Class For handling the event-driven server
@@ -72,7 +73,7 @@ class PacketHandler(asyncore.dispatcher_with_send):
 				dealRangeReq(self, quantity)
 			elif data['id'] == 3:
 				numberFound = data['payload']
-				dealNumberFound(self.addr, numberFound)
+				dealNumberFound(self, self.addr, numberFound)
 			else:
 				print 'something went wrong.'
 

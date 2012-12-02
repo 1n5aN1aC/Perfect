@@ -23,7 +23,8 @@ def signal_handler(signum, frame):
 	exit()
 
 def dealFoundPerfect(self, num):
-	print 'found perfect.  need to send'
+	print 'found perfect number.  sending', num, 'to server.'
+	client.sendJson(3, num)
 
 def findPerfectNumbers(self, min, disable):
 	global each
@@ -83,6 +84,7 @@ class AsyncClient(asyncore.dispatcher):
 	#Delegates them out to be processed
 	def handle_read(self):
 		jdata = self.recv(8192)
+		#print jdata
 		#assuming we actually received SOMETHING.....
 		if jdata:
 			#lets load up that json!  (DOES NOT DEAL WITH INVALID JSON!)
@@ -98,16 +100,6 @@ class AsyncClient(asyncore.dispatcher):
 				signal_handler(reason, 2)
 			else:
 				print 'something went wrong.'
-
-	#whenever we have a chance to write to the socket
-	#Go ahead and send the data
-	#Caveots:  forces us to write the entire json string imediently,
-	#Else bad things will happen (sending half the data, then the other half)
-	#def handle_write(self):
-	#	sent = self.send(self.buffer)
-	#	self.buffer = self.buffer[sent:]
-		#if sent != 0:
-		#	print "sent "+str(sent)+" bytes to server!"
 
 #Thread that actually does all the processing
 class SenderThread(threading.Thread):
