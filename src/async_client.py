@@ -16,16 +16,25 @@ each = 0
 currNum = 0
 
 #deal with signals
+#Shutdown all threads as well
 def signal_handler(signum, frame):
 	print 'SHUTDOWN!  Reason:', signum
 	client.t.stop()
 	time.sleep(1)
 	exit()
 
+#We found a perfect number!
+#Send it off the the server.
 def dealFoundPerfect(self, num):
 	print 'found perfect number.  sending', num, 'to server.'
 	client.sendJson(3, num)
 
+#yup, server is still there!
+def dealKeepAlive(self, payload):
+	print 'got keep-alive back from server!'
+
+#Find perfect numbers from min to min+each
+#disable, if True, will prevent it from sending found numbers tot he server
 def findPerfectNumbers(self, min, disable):
 	global each
 	n = min
@@ -52,10 +61,6 @@ def calcSpeed(self):
 		each += 1
 	each = each * 5
 	print 'your computer will do', each, 'numbers at a time.'
-
-#yup, server is still there!
-def dealKeepAlive(self, payload):
-	print 'got keep-alive back from server!'
 
 #main class which handles the async part of the client.
 #It then calls out, and starts up the actuall processing thread
@@ -118,7 +123,8 @@ class SenderThread(threading.Thread):
 	def run(self):
 		global each
 		self.client.sendJson(1, each)
-		
+	
+	#called when we receive an assignment of a range of numbers from the server
 	def dealRangeAggignment(self, beginning):
 		global currNum
 		currNum = beginning
@@ -131,6 +137,7 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGABRT, signal_handler)
 
+#calculate our speed.....
 calcSpeed('derp')
 
 #ok, now actually start up the client!
