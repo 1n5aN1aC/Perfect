@@ -4,56 +4,72 @@ import json
 import signal
 import threading
 from time import sleep
-from sys import stdout
+from sys import stdout, exit
 from StringIO import StringIO
 
-DEBUG = True
+currNum = 0
+
 connectionClassList = []
 connectionSocketList = []
 
+#deal with signals
 def signal_handler(signum, frame):
 	print 'Signal handler called with signal', signum
-	os.kill(pid, sig)
+	exit()
 
-def dealKeepAlive(address):
+#Returns a json-formated string based on the packet ID and packet payload
+def createJson(self, id, payload):
+	lol = json.dumps( {"id":id, "payload":payload} )
+	return lol
+
+#If client sends us a packet ID 0 (keepalive)
+#Then just pong one back to the client
+def dealKeepAlive(self, address):
 	print 'received keep-alive from:', address
-	#echo the ping back
-	self.send(data)
+	self.send( createJson(self, 0, "pong") )
 
-def dealRangeReq(socket, quantity):
-	print 'received request for', quantity, 'numbers from:', socket
-	socket.send(data)
+#Cliet asked for a range of numbers they should check
+#Send them however many they asked for
+def dealRangeReq(self, quantity):
+	print 'received request for', quantity, 'numbers from:', self.addr
+	self.send( createJson(self, 2, "this will normally be the range of numbers") )
 
-def dealNumberFound(address, numberFound):
+#The Client sent us a number that they say is a perfect number!
+#Amazing!  Make a note of this!
+def dealNumberFound(self, address, numberFound):
 	print 'client', address[0],':',address[1], 'claims that', numberFound, 'is a perfect number!'
+	self.send( createJson(self, 0, "yup I got that") )
 
-class EchoHandler(asyncore.dispatcher_with_send):
-	def setAddr(self, addr):
-		self.addr = addr
-		
-	def setSock(self, sock):
-		self.sock = sock
+#Class For handling the event-driven server
+class PacketHandler(asyncore.dispatcher_with_send):
+	def setAddr(self, address):
+		self.addr = address
+
+	#probably not needed anymore
+	def setSock(self, socket):
+		self.sock = socket
 
 	def handle_read(self):
-		data = self.recv(8192)
+		jdata = self.recv(8192)
 		#assuming we actually received SOMETHING.....
-		if data:
+		if jdata:
 			#lets load up that json!  (DOES NOT DEAL WITH INVALID JSON!)
-			jdata = json.loads(data)
-			if jdata['id'] == 0:
+			data = json.loads(jdata)
+			if data['id'] == 0:
 				dealKeepAlive(self.addr)
-			elif jdata['id'] == 1:
-				quantity = jdata['payload']
-				dealRangeReq(self.sock, quantity)
-			elif jdata['id'] == 3:
-				numberFound = jdata['payload']
+			elif data['id'] == 1:
+				quantity = data['payload']
+				dealRangeReq(self, quantity)
+			elif data['id'] == 3:
+				numberFound = data['payload']
 				dealNumberFound(self.addr, numberFound)
 			else:
 				print 'something went wrong.'
-				
 			#for testing, send everything back to client
-			self.send(data)
+			#self.send(data)
 
+#Class that sets up the event-drivin server
+#and passes data it receives to the PacketHandler() class
 class EchoServer(asyncore.dispatcher):
 	def __init__(self, host, port):
 		asyncore.dispatcher.__init__(self)
@@ -62,6 +78,7 @@ class EchoServer(asyncore.dispatcher):
 		self.bind((host, port))
 		self.listen(5)
 
+	#We got a client connection!
 	def handle_accept(self):
 		pair = self.accept()
 		if pair is None:
@@ -69,19 +86,17 @@ class EchoServer(asyncore.dispatcher):
 			pass
 		else:
 			sock, addr = pair
-			if DEBUG:
-				print 'Incoming connection from %s' % repr(addr)
-			handler = EchoHandler(sock)
+			handler = PacketHandler(sock)
 			handler.setAddr(addr)
 			handler.setSock(sock)
 			connectionClassList.append(self)
 			connectionSocketList.append(sock)
-			
 
 #set up signal handler(s)
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGABRT, signal_handler)
 
-server = EchoServer('localhost', 8080)
-asyncore.loop()
+#Run the event-driven server
+server = EchoServer('localhost', 2541)
+asyncore.loop(2)
