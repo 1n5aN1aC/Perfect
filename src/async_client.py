@@ -12,6 +12,7 @@ HOST = '127.0.0.1'   # The remote host
 PORT = 2541          # The same port as used by the server. Default 2541
 #change these values only
 
+each = 0
 currNum = 0
 maxNum = 0
 
@@ -26,9 +27,23 @@ def createJson(self, id, payload):
 	lol = json.dumps( {"id":id, "payload":payload} )
 	return lol
 
+def dealFoundPerfect(self, num):
+	print 'found perfect.  need to send'
+
+def findPerfectNumbers(self, min, max):
+	n = min
+	while n < max:
+		factors = [1]
+		[factors.append(i) for i in range(2,n+1) if n%i == 0]
+		if sum(factors) == 2*n: dealFoundPerfect(self, n)
+		n += 1
+
 #yup, server is still there!
 def dealKeepAlive(self, payload):
 	print 'got keep-alive back from server!'
+
+def dealRangeAggignment(self, beginning):
+	print 'derp'
 
 #main class which handles the async part of the client.
 #It then calls out, and starts up the actuall processing thread
@@ -40,7 +55,6 @@ class AsyncClient(asyncore.dispatcher):
 		asyncore.dispatcher.__init__(self)
 		self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.connect( (host, PORT) )
-
 		self.t = SenderThread(self)
 		self.t.start()
 
@@ -67,7 +81,7 @@ class AsyncClient(asyncore.dispatcher):
 				dealKeepAlive(self, lol)
 			elif data['id'] == 2:
 				beginning = data['payload']
-				dealRangeReq(self, beginning)
+				dealRangeAggignment(self, beginning)
 			elif data['id'] == 9:
 				reason = data['payload']
 				signal_handler(reason, 2)
@@ -101,13 +115,15 @@ class SenderThread(threading.Thread):
 	def run(self):
 		counter = 0
 		while self._stop == False:
+			self.client.sendJson(1, 43)
 			time.sleep(3)
-			self.client.sendJson(0, "data_thread")
 
 #set up signal handler(s)
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGABRT, signal_handler)
+
+findPerfectNumbers('derp' ,0, 1000)
 
 #ok, now actually start up the client!
 client = AsyncClient(HOST)

@@ -18,8 +18,8 @@ connectionSocketList = []
 
 #deal with signals
 def signal_handler(signum, frame):
-	print 'Signal handler called with signal:', signum
 	server.sendKill();
+	print 'SHUTDOWN!  Reason:', signum
 	exit()
 
 #Returns a json-formated string based on the packet ID and packet payload
@@ -30,14 +30,16 @@ def createJson(self, id, payload):
 #If client sends us a packet ID 0 (keepalive)
 #Then just pong one back to the client
 def dealKeepAlive(self, payload):
-	print 'received keep-alive from:', self.addr
+	print 'replying to keep-alive from:', self.addr
 	self.send( createJson(self, 0, payload) )
 
 #Cliet asked for a range of numbers they should check
 #Send them however many they asked for
 def dealRangeReq(self, quantity):
+	global currNum
 	print 'received request for', quantity, 'numbers from:', self.addr
-	self.send( createJson(self, 2, "this will normally be the range of numbers") )
+	self.send( createJson(self, 2, quantity) )
+	currNum += quantity
 
 #The Client sent us a number that they say is a perfect number!
 #Amazing!  Make a note of this!
@@ -87,8 +89,11 @@ class AsyncServer(asyncore.dispatcher):
 	#Make sure we send the shutdown packet first!
 	def sendKill(self):
 		for _socketobject in connectionSocketList:
-			_socketobject.send( createJson(self, 9, 'Server says SHUTDOWN!') )
-			print str( _socketobject.getpeername()[0] ) + ':' + str( _socketobject.getpeername()[1] ) + ' was sent the shutdown signal!'
+			try:
+				_socketobject.send( createJson(self, 9, 'Server says SHUTDOWN!') )
+				print str( _socketobject.getpeername()[0] ) + ':' + str( _socketobject.getpeername()[1] ) + ' was sent the shutdown signal!'
+			except Exception:
+				print 'Tried to Kill a client that had already disconnected!'
 
 	#We got a client connection!
 	def handle_accept(self):
@@ -106,8 +111,12 @@ class AsyncServer(asyncore.dispatcher):
 
 	def handle_close():
 		self.close()
-		for _socketobject in connectionSocketList:
-		
+		#for _socketobject in connectionSocketList:
+		#	if _socketobject.getpeername()[0] == self.sock.getpeername()[0]
+		#		print 'derp'
+		#		connectionSocketList.remove(self.sock)
+		#	else
+		#		print 'herp'
 
 #set up signal handler(s)
 signal.signal(signal.SIGINT, signal_handler)
