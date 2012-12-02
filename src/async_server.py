@@ -6,6 +6,11 @@ import threading
 from time import sleep
 from sys import stdout, exit
 
+#change these values only
+HOST = '127.0.0.1'   # The remote host
+PORT = 2541          # The same port as used by the server. Default 2541
+#change these values only
+
 currNum = 0
 
 connectionClassList = []
@@ -14,6 +19,7 @@ connectionSocketList = []
 #deal with signals
 def signal_handler(signum, frame):
 	print 'Signal handler called with signal:', signum
+	server.sendKill();
 	exit()
 
 #Returns a json-formated string based on the packet ID and packet payload
@@ -23,9 +29,9 @@ def createJson(self, id, payload):
 
 #If client sends us a packet ID 0 (keepalive)
 #Then just pong one back to the client
-def dealKeepAlive(self):
+def dealKeepAlive(self, payload):
 	print 'received keep-alive from:', self.addr
-	self.send( createJson(self, 0, "pong") )
+	self.send( createJson(self, 0, payload) )
 
 #Cliet asked for a range of numbers they should check
 #Send them however many they asked for
@@ -56,7 +62,8 @@ class PacketHandler(asyncore.dispatcher_with_send):
 			#lets load up that json!  (DOES NOT DEAL WITH INVALID JSON!)
 			data = json.loads(jdata)
 			if data['id'] == 0:
-				dealKeepAlive(self)
+				lol = data['payload']
+				dealKeepAlive(self, lol)
 			elif data['id'] == 1:
 				quantity = data['payload']
 				dealRangeReq(self, quantity)
@@ -65,8 +72,6 @@ class PacketHandler(asyncore.dispatcher_with_send):
 				dealNumberFound(self.addr, numberFound)
 			else:
 				print 'something went wrong.'
-			#for testing, send everything back to client
-			#self.send(data)
 
 #Class that sets up the event-drivin server
 #and passes data it receives to the PacketHandler() class
@@ -77,6 +82,10 @@ class AsyncServer(asyncore.dispatcher):
 		self.set_reuse_addr()
 		self.bind((host, port))
 		self.listen(5)
+
+	def sendKill():
+		for each in connectionSocketList:
+			
 
 	#We got a client connection!
 	def handle_accept(self):
@@ -98,5 +107,5 @@ signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGABRT, signal_handler)
 
 #Run the event-driven server
-server = AsyncServer('localhost', 2541)
+server = AsyncServer(HOST, PORT)
 asyncore.loop(3)

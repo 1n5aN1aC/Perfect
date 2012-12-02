@@ -4,10 +4,13 @@ import json
 import signal
 import threading
 import time
+from random import randrange
 from sys import stdout, exit
 
+#change these values only
 HOST = '127.0.0.1'   # The remote host
 PORT = 2541          # The same port as used by the server. Default 2541
+#change these values only
 
 currNum = 0
 maxNum = 0
@@ -18,6 +21,15 @@ def signal_handler(signum, frame):
 	client.t.stop()
 	exit()
 
+#Returns a json-formated string based on the packet ID and packet payload
+def createJson(self, id, payload):
+	lol = json.dumps( {"id":id, "payload":payload} )
+	return lol
+
+#yup, server is still there!
+def dealKeepAlive(self, payload):
+	print 'got keep-alive back from server!'
+
 class AsyncClient(asyncore.dispatcher):
 	buffer = ""
 	t = None
@@ -27,8 +39,6 @@ class AsyncClient(asyncore.dispatcher):
 		self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.connect( (host, PORT) )
 
-		#print "sending data from __init__"
-		#self.sendCommand("data_init")
 		self.t = SenderThread(self)
 		self.t.start()
 
@@ -40,7 +50,22 @@ class AsyncClient(asyncore.dispatcher):
 		self.t.stop()
 
 	def handle_read(self):
-		print self.recv(8192)
+		jdata = self.recv(8192)
+		#assuming we actually received SOMETHING.....
+		if jdata:
+			#lets load up that json!  (DOES NOT DEAL WITH INVALID JSON!)
+			data = json.loads(jdata)
+			if data['id'] == 0:
+				lol = data['payload']
+				dealKeepAlive(self, lol)
+			elif data['id'] == 2:
+				beginning = data['payload']
+				dealRangeReq(self, beginning)
+			elif data['id'] == 9:
+				reason = data['payload']
+				signal_handler(reason, 2)
+			else:
+				print 'something went wrong.'
 
 	#whenever we have a chance to write to the socket
 	#Go ahead and send the data
@@ -68,7 +93,6 @@ class SenderThread(threading.Thread):
 		counter = 0
 		while self._stop == False:
 			time.sleep(3)
-			print "sending data from thread"
 			self.client.sendJson(0, "data_thread")
 
 #set up signal handler(s)
