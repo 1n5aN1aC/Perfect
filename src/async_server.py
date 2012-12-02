@@ -5,7 +5,6 @@ import signal
 import threading
 from time import sleep
 from sys import stdout, exit
-from StringIO import StringIO
 
 currNum = 0
 
@@ -14,7 +13,7 @@ connectionSocketList = []
 
 #deal with signals
 def signal_handler(signum, frame):
-	print 'Signal handler called with signal', signum
+	print 'Signal handler called with signal:', signum
 	exit()
 
 #Returns a json-formated string based on the packet ID and packet payload
@@ -24,8 +23,8 @@ def createJson(self, id, payload):
 
 #If client sends us a packet ID 0 (keepalive)
 #Then just pong one back to the client
-def dealKeepAlive(self, address):
-	print 'received keep-alive from:', address
+def dealKeepAlive(self):
+	print 'received keep-alive from:', self.addr
 	self.send( createJson(self, 0, "pong") )
 
 #Cliet asked for a range of numbers they should check
@@ -56,7 +55,7 @@ class PacketHandler(asyncore.dispatcher_with_send):
 			#lets load up that json!  (DOES NOT DEAL WITH INVALID JSON!)
 			data = json.loads(jdata)
 			if data['id'] == 0:
-				dealKeepAlive(self.addr)
+				dealKeepAlive(self)
 			elif data['id'] == 1:
 				quantity = data['payload']
 				dealRangeReq(self, quantity)
@@ -99,4 +98,4 @@ signal.signal(signal.SIGABRT, signal_handler)
 
 #Run the event-driven server
 server = EchoServer('localhost', 2541)
-asyncore.loop(2)
+asyncore.loop(3)
