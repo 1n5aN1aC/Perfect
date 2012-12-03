@@ -78,34 +78,44 @@ There are 8 Used packet types in the system:
     \end{tabular}
 \end{center}
 
-
-
 \section{Work Log}
 
-.
+Nov 23- Python Socket code
+
+Nov 26- Server keeps listening
+
+Nov 28- Server async
+
+Dec 1- Finished Basic Client server Working
+
+Dec 2- Fixed Stuff, Wrote Report
 
 Full work log can be found here:
 \url{https://github.com/1n5aN1aC/Perfect/commits/master}
 
 \section{Challenges}
 
-.
+I tried writing the client in C, as specified, but I both had issues with witing a proper asncronous network client for it, and getting json parson and construction working in it.
+
+The pythn was fairly easy, except for a few quirks of python that had to be learned, and overcome.
 
 \section{Questions And Answers}
 
 \subsection{what do you think the main point of this assignment is?}
 
 \begin{itemize}
-\item .
-\item .
+\item Mainly, to get us to learn to develop our own protocol, and implement it.  This implies a lot of engeneering, and planning
+\item But also, to use threads, or async network programming, to amke sure the IO is isolated fromt he Program logic
 \end{itemize}
 
 \subsection{how did you ensure your solution was correct? Testing details, for instance.}
 
-.
+Tests were ran on many different computers, with the server only being tested on my computer, but tested locally, over the LAN, and over the internet.
+
+It was tested with as many as 8 consecutive clients.
 
 \subsection{what did you learn?}
 
-.
+I learned Async Network programming in python is fairly fun, but much, much, harder in C or C Plus Plus.
 
 \end{document}
