@@ -52,31 +52,33 @@
 
 \section{Overall System Design}
 
-.
+There are 8 Used packet types in the system:
 
 \begin{center}
     \begin{tabular}{ | l | l | l | p{5cm} |}
     \hline
     Packet ID & <-> & Name & Description \\ \hline
-    0 & c <-> s & keep-alive & A clear day with lots of sunshine.  
-    However, the strong breeze will bring down the temperatures. \\ \hline
-    1 & c -> s & connection init & Cloudy with rain, across many northern regions. Clear spells
-    across most of Scotland and Northern Ireland,
-    but rain reaching the far northwest. \\ \hline
-    2 & s -> c & ak & Rain will still linger for the morning.
-    Conditions will improve by early afternoon and continue
-    throughout the evening. \\ \hline
-	3 & c -> s & speed reply & A clear day with lots of sunshine. \\ \hline
-	4 & c -> s & range reguest & A clear day with lots of sunshine. \\ \hline
-	5 & s -> c & assign range & A clear day with lots of sunshine. \\ \hline
-	6 & c -> s & found \# & A clear day with lots of sunshine. \\ \hline
-	7 & - & - & A clear day with lots of sunshine. \\ \hline
-	8 & - & - & A clear day with lots of sunshine. \\ \hline
-	9 & s -> c & kill & A clear day with lots of sunshine. \\ \hline
+    0 & c <-> s & Keep-Alive & Apacket That is Completly Unused but   
+    The server will ping it back to the client if received. \\ \hline
+    1 & c -> s & Range Request & The Client sends this to the server
+    To ask for work to do.  Payload is the range
+    of numbers the client would like \\ \hline
+    2 & c <- s & Assign Range & Server sends this back to the client
+    Payload is the number the client should start at
+    It is implied that the Client should do how much they requested past that \\ \hline
+	3 & c -> s & Found Number & Client Sends this to server When Number Found \\ \hline
+	4 & c -> s & Unused & Unused \\ \hline
+	5 & c <-> s & Report Found & Reporter Uses to ask Server What numbers were found \\ \hline
+	6 & c <-> s & Report Clients & Reporter Uses to ask Server What Clients are connected \\ \hline
+	7 & <-> & Report Number & Reporter Uses to ask Server What Number we are currently on \\ \hline
+	8 & - & Unused & Unused \\ \hline
+	9 & c <-> s & Kill & A server can send this to the clients to tell them to shut down
+    or a reporter can send this to the Server to tell it to stop
+	Its clients and shut down.\\ \hline
     \end{tabular}
 \end{center}
 
-.
+
 
 \section{Work Log}
 

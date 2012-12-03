@@ -67,7 +67,7 @@ def calcSpeed(self):
 		findPerfectNumbers('derp', 100000, 'True')
 		t2 = time.time()
 		each += 1
-	each = (each * 5) + 5
+	each = (each * 3)
 	print 'your computer will do', each, 'numbers at a time.'
 
 #main class which handles the async part of the client.
@@ -135,9 +135,19 @@ class SenderThread(threading.Thread):
 	#called when we receive an assignment of a range of numbers from the server
 	def dealRangeAggignment(self, beginning):
 		global currNum
+		global each
 		currNum = beginning
 		print 'now fiding perfect numbers between', beginning, 'and', beginning+each
+		t1 = time.time()
 		findPerfectNumbers(self, beginning, 'false')
+		t2 = time.time()
+		#this is optional, but makes the amount the client asks for adaptive.
+		#That is, as numbers get harder to compute, Each client will do less at a time.
+		if t2-t1 < 10:
+			each += 5
+		elif t2-t1 > 20:
+			each -= 5
+		#This actually requests more
 		self.run()
 
 #set up signal handler(s)

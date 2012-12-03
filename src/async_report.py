@@ -7,10 +7,18 @@ import time
 import os
 import sys
 
-if len(sys.argv) != 2:
+if len(sys.argv) < 2:
 	print 'You must specify an IP to connect to to monitor!'
 	print 'like so:  reporty.py 127.0.0.1'
 	sys.exit(1)
+
+SHUTDOWN = False
+if len(sys.argv) == 3:
+	if '-k' in sys.argv[2] :
+		print 'Shutting down Server in Three Seconds...'
+		SHUTDOWN = True
+	else:
+		print 'Not sure what that argument was.'
 
 #change these values only
 HOST = sys.argv[1]   # The remote host
@@ -21,6 +29,10 @@ PORT = 2541          # The same port as used by the server. Default 2541
 serverFound = []
 serverClients = []
 serverNumber = 0
+t1 = 0
+t2 = 0
+n1 = 0
+n2 = 0
 
 #Function used for clearing screen
 clear = lambda: os.system('cls')
@@ -52,12 +64,18 @@ def dealReportNumber(self, num):
 	serverNumber = num
 	
 def dealServerShutdown(self, reason):
+	time.sleep(2)
 	clear()
 	print ''
 	print 'The Server Has Shutdown.  Total Stats:'
 	print ''
-	print 'numbers found:', serverFound
-	print 'Stopped at:', serverNumber
+	print 'Server Found', len(serverFound), 'perfect numbers:'
+	print serverFound
+	print 'Server Checked Numbers up to:', serverNumber
+	print ''
+	print 'We monitored the server for:', int (t2 - t1), 'seconds'
+	print 'Numbers chicked during that time:', int (n2 - n1)
+	print 'Numbers Checked Per Second:', int( int(n2-n1) / int(t2-t1) )
 
 #main class which handles the async part of the client.
 #It then calls out, and starts up the actuall processing thread
@@ -124,7 +142,25 @@ class CursesThread(threading.Thread):
 
 	#What the thread actually does
 	def run(self):
+		global serverNumber
+		global t1
+		global t2
+		global n1
+		global n2
 		print 'connecting....'
+		
+		#initial Setup Queries
+		report.sendJson( 7, 'what number are you on?' )
+		time.sleep(0.5)
+		report.sendJson( 5, 'gimme found numbers.' )
+		time.sleep(0.5)
+		t1 = time.time()
+		n1 = serverNumber
+		
+		if SHUTDOWN == True:
+			report.sendJson( 9, 'this is my password' )
+			time.sleep(0.5)
+		
 		while self._stop == False:
 			report.sendJson( 5, 'gimme found numbers.' )
 			time.sleep(0.5)
@@ -132,17 +168,27 @@ class CursesThread(threading.Thread):
 			time.sleep(0.5)
 			report.sendJson( 7, 'what number are you on?' )
 			
+			t2 = time.time()
+			n2 = serverNumber
+			
+			#just a safety check to prevent some display bugs
 			if self._stop == True:
 				sys.exit()
 			clear()
 			print ''
 			print 'Report Thread is now Monitoring'
 			print ''
+			print ''
 			print 'Numbers found:', serverFound
-			print 'Number of clients:', len(serverClients)
+			print ''
+			print 'Number of active clients:', len(serverClients)
+			print ''
 			print 'Currently on:', serverNumber
+			print 'Monitoring for:', int (t2 - t1)
+			print 'Number since started:', int (n2 - n1)
+			print 'Numbers Checked Per Second', int( int(n2-n1) / int(t2-t1) )
 			
-			time.sleep(2)
+			time.sleep(1.5)
 
 #set up signal handler(s)
 signal.signal(signal.SIGINT, signal_handler)

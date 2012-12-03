@@ -7,8 +7,7 @@ from time import sleep
 from sys import stdout, exit
 
 #change these values only
-HOST = '127.0.0.1'   # The remote host
-PORT = 2541          # The same port as used by the server. Default 2541
+PORT = 2541		# The port used by the server. Default 2541
 #change these values only
 
 #Global Variables
@@ -63,7 +62,11 @@ def dealReportClients(self):
 		print 'A Reporter has asked for our connection List.  Sending.'
 	addrList = []
 	for _socketobject in connectionSocketList:
-		addrList.append( _socketobject.getpeername() )
+		try:
+			addrList.append( _socketobject.getpeername() )
+		except Exception:
+			print 'derp'
+			pass
 	self.send( createJson(self, 6, addrList) )
 
 def dealReportNumber(self):
@@ -102,6 +105,9 @@ class PacketHandler(asyncore.dispatcher_with_send):
 				dealReportClients(self)
 			elif data['id'] == 7:
 				dealReportNumber(self)
+			elif data['id'] == 9:
+				sleep(5)
+				signal_handler('Got Kill Packet From Client', 'derp')
 			else:
 				print 'something went wrong.'
 
@@ -112,7 +118,7 @@ class AsyncServer(asyncore.dispatcher):
 		asyncore.dispatcher.__init__(self)
 		self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.set_reuse_addr()
-		self.bind((host, port))
+		self.bind(("", port))
 		self.listen(5)
 		print 'server is now listening for connections.'
 
@@ -124,7 +130,7 @@ class AsyncServer(asyncore.dispatcher):
 				_socketobject.send( createJson(self, 9, 'Server says SHUTDOWN!') )
 				print str( _socketobject.getpeername()[0] ) + ':' + str( _socketobject.getpeername()[1] ) + ' was sent the shutdown signal!'
 			except Exception:
-				print 'Tried to Kill a client that had already disconnected!'
+				pass
 
 	#We got a client connection!
 	def handle_accept(self):
@@ -141,8 +147,8 @@ class AsyncServer(asyncore.dispatcher):
 			connectionSocketList.append(sock)
 
 	def handle_close():
-		self.close()
 		print self.addr, 'has disconnecteed!'
+		self.close()
 		#for _socketobject in connectionSocketList:
 		#	if _socketobject.getpeername()[0] == self.sock.getpeername()[0]
 		#		print 'derp'
@@ -156,5 +162,5 @@ signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGABRT, signal_handler)
 
 #Run the event-driven server
-server = AsyncServer(HOST, PORT)
+server = AsyncServer('', PORT)
 asyncore.loop(1)
