@@ -4,67 +4,62 @@ import json
 import signal
 import threading
 import time
-from random import randrange
-from sys import stdout, exit
+import os
+import sys
+
+if len(sys.argv) != 2:
+	print 'You must specify an IP to connect to to monitor!'
+	print 'like so:  reporty.py 127.0.0.1'
+	sys.exit(1)
 
 #change these values only
-HOST = '127.0.0.1'   # The remote host
+HOST = sys.argv[1]   # The remote host
 PORT = 2541          # The same port as used by the server. Default 2541
 #change these values only
 
-each = 0
-currNum = 0
+#Global variables
+serverFound = []
+serverClients = []
+serverNumber = 0
+
+#Function used for clearing screen
+clear = lambda: os.system('cls')
 
 #deal with signals
 #Shutdown all threads as well
 def signal_handler(signum, frame):
+	if signum == 2:
+		signum = 'Control-c'
 	print 'SHUTDOWN!  Reason:', signum
-	client.t.stop()
+	report.t.stop()
 	time.sleep(1)
-	exit()
-
-#We found a perfect number!
-#Send it off the the server.
-def dealFoundPerfect(self, num):
-	print 'found perfect number.  sending', num, 'to server.'
-	client.sendJson(3, num)
+	sys.exit()
 
 #yup, server is still there!
 def dealKeepAlive(self, payload):
 	print 'got keep-alive back from server!'
 
-#Find perfect numbers from min to min+each
-#disable, if True, will prevent it from sending found numbers tot he server
-def findPerfectNumbers(self, min, disable):
-	global each
-	n = min
-	max = min+each
-	while n < max:
-		factors = [1]
-		[factors.append(i) for i in range(2,n+1) if n%i == 0]
-		if sum(factors) == 2*n:
-			if disable != 'True':
-				dealFoundPerfect(self, n)
-		n += 1
+def dealReportFound(self, serverFoundParam):
+	global serverFound
+	serverFound = serverFoundParam
 
-#loops through, calculating how many perfect numbers your computer can find in 15 seconds.
-#it checks how many you can numbers near 100,000 your computer can check in 15 seconds
-def calcSpeed(self):
-	global each
-	print 'we are now checking how fast your computer is.'
-	print 'This should take exactly 15 seconds...'
-	t1 = time.time()
-	t2 = time.time()
-	while t2 - t1 < 15:
-		findPerfectNumbers('derp', 100000, 'True')
-		t2 = time.time()
-		each += 1
-	each = (each * 5) + 5
-	print 'your computer will do', each, 'numbers at a time.'
+def dealReportClients(self, serverClientsParam):
+	global serverClients
+	serverClients = serverClientsParam
+
+def dealReportNumber(self, num):
+	global serverNumber
+	serverNumber = num
+	
+def dealServerShutdown(self, reason):
+	print 'the server has shutdown.  Printing total stats now.'
+	print '.'
+	print 'numbers found:', serverFound
+	print 'Stopped at:', serverNumber
 
 #main class which handles the async part of the client.
 #It then calls out, and starts up the actuall processing thread
-class AsyncClient(asyncore.dispatcher):
+class AsyncReport(asyncore.dispatcher):
 	buffer = ""
 	t = None
 
@@ -72,7 +67,7 @@ class AsyncClient(asyncore.dispatcher):
 		asyncore.dispatcher.__init__(self)
 		self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.connect( (host, PORT) )
-		self.t = SenderThread(self)
+		self.t = CursesThread(self)
 		self.t.start()
 
 	#adds the requested json to the send buffer
@@ -97,22 +92,28 @@ class AsyncClient(asyncore.dispatcher):
 			if data['id'] == 0:
 				lol = data['payload']
 				dealKeepAlive(self, lol)
-			elif data['id'] == 2:
-				beginning = data['payload']
-				self.t.dealRangeAggignment(beginning)
+			elif data['id'] == 5:
+				foundArray = data['payload']
+				dealReportFound(self, foundArray)
+			elif data['id'] == 6:
+				serverClients = data['payload']
+				dealReportClients(self, clientsArray)
+			elif data['id'] == 7:
+				numberServer = data['payload']
+				dealReportNumber(self, numberServer)
 			elif data['id'] == 9:
 				reason = data['payload']
-				signal_handler(reason, 2)
+				dealServerShutdown(self, reason)
 			else:
 				print 'something went wrong.'
 
 #Thread that actually does all the processing
-class SenderThread(threading.Thread):
+class CursesThread(threading.Thread):
 	_stop = False
 
-	def __init__(self, client):
-		super(SenderThread,self).__init__()
-		self.client = client
+	def __init__(self, report):
+		super(CursesThread,self).__init__()
+		self.report = report
 
 	#We received the signal to stop from the parent class
 	#or from the signal handler.  Stop what we are doing now
@@ -121,25 +122,28 @@ class SenderThread(threading.Thread):
 
 	#What the thread actually does
 	def run(self):
-		global each
-		self.client.sendJson(1, each)
-	
-	#called when we receive an assignment of a range of numbers from the server
-	def dealRangeAggignment(self, beginning):
-		global currNum
-		currNum = beginning
-		print 'now fiding perfect numbers between', beginning, 'and', beginning+each
-		findPerfectNumbers(self, beginning, 'false')
-		self.run()
+		print 'connecting....'
+		while self._stop == False:
+			report.sendJson( 5, 'gimme found numbers.' )
+			time.sleep(0.5)
+			report.sendJson( 6, 'gimme connection list.' )
+			time.sleep(0.5)
+			report.sendJson( 7, 'what number are you on?' )
+			
+			clear()
+			print ''
+			print 'Report Thread is now Monitoring'
+			print ''
+			print 'numbers found:', serverFound
+			print 'Currently on:', serverNumber
+			
+			time.sleep(3)
 
 #set up signal handler(s)
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGABRT, signal_handler)
 
-#calculate our speed.....
-calcSpeed('derp')
-
 #ok, now actually start up the client!
-client = AsyncClient(HOST)
+report = AsyncReport(HOST)
 asyncore.loop(1)

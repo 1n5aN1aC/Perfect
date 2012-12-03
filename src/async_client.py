@@ -4,11 +4,16 @@ import json
 import signal
 import threading
 import time
+import sys
 from random import randrange
-from sys import stdout, exit
+
+if len(sys.argv) != 2:
+	print 'You must specify an IP to connect to to monitor!'
+	print 'like so:  reporty.py 127.0.0.1'
+	sys.exit(1)
 
 #change these values only
-HOST = '127.0.0.1'   # The remote host
+HOST = sys.argv[1]   # The remote host
 PORT = 2541          # The same port as used by the server. Default 2541
 #change these values only
 
@@ -18,16 +23,19 @@ currNum = 0
 #deal with signals
 #Shutdown all threads as well
 def signal_handler(signum, frame):
+	if signum == 2:
+		signum = 'Control-c'
 	print 'SHUTDOWN!  Reason:', signum
 	client.t.stop()
 	time.sleep(1)
-	exit()
+	sys.exit()
 
 #We found a perfect number!
 #Send it off the the server.
 def dealFoundPerfect(self, num):
 	print 'found perfect number.  sending', num, 'to server.'
 	client.sendJson(3, num)
+	time.sleep(1)
 
 #yup, server is still there!
 def dealKeepAlive(self, payload):

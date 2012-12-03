@@ -11,8 +11,8 @@ HOST = '127.0.0.1'   # The remote host
 PORT = 2541          # The same port as used by the server. Default 2541
 #change these values only
 
+#Global Variables
 currNum = 0
-
 connectionClassList = []
 connectionSocketList = []
 perfectNumbersFound = []
@@ -20,6 +20,8 @@ perfectNumbersFound = []
 #deal with signals
 def signal_handler(signum, frame):
 	server.sendKill();
+	if signum == 2:
+		signum = 'Control-c'
 	print 'SHUTDOWN!  Reason:', signum
 	sleep(1)
 	exit()
@@ -48,20 +50,19 @@ def dealRangeReq(self, quantity):
 def dealNumberFound(self, address, numberFound):
 	print 'client', address[0],':',address[1], 'claims that', numberFound, 'is a perfect number!'
 	perfectNumbersFound.append(numberFound)
-	sleep(1)
-	self.send( createJson(self, 0, "yup I got that") )
 	
 def dealReportFound(self):
-	print 'not implemented yet'
-	self.send( createJson(self, 5, "yup I got that") )
+	print 'A Reporter has asked for the numbers we have found.  Sending.'
+	self.send( createJson(self, 5, perfectNumbersFound) )
 
 def dealReportClients(self):
+	print 'A Reporter has asked for our connection List.  Sending.'
 	print 'not implemented yet'
-	self.send( createJson(self, 6, "yup I got that") )
+	#self.send( createJson(self, 6, connectionSocketList) )
 
 def dealReportNumber(self):
-	print 'not implemented yet'
-	self.send( createJson(self, 7, "yup I got that") )
+	print 'A Reporter has asked for how far we are currently.  Sending.'
+	self.send( createJson(self, 7, currNum) )
 
 #Class For handling the event-driven server
 class PacketHandler(asyncore.dispatcher_with_send):
@@ -88,6 +89,12 @@ class PacketHandler(asyncore.dispatcher_with_send):
 			elif data['id'] == 3:
 				numberFound = data['payload']
 				dealNumberFound(self, self.addr, numberFound)
+			elif data['id'] == 5:
+				dealReportFound(self)
+			elif data['id'] == 6:
+				dealReportClients(self)
+			elif data['id'] == 7:
+				dealReportNumber(self)
 			else:
 				print 'something went wrong.'
 
@@ -100,6 +107,7 @@ class AsyncServer(asyncore.dispatcher):
 		self.set_reuse_addr()
 		self.bind((host, port))
 		self.listen(5)
+		print 'server is now listening for connections.'
 
 	#We have been told to shutdown!
 	#Make sure we send the shutdown packet first!
