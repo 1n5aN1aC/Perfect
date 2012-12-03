@@ -52,8 +52,10 @@ def dealReportNumber(self, num):
 	serverNumber = num
 	
 def dealServerShutdown(self, reason):
-	print 'the server has shutdown.  Printing total stats now.'
-	print '.'
+	clear()
+	print ''
+	print 'The Server Has Shutdown.  Total Stats:'
+	print ''
 	print 'numbers found:', serverFound
 	print 'Stopped at:', serverNumber
 
@@ -96,7 +98,7 @@ class AsyncReport(asyncore.dispatcher):
 				foundArray = data['payload']
 				dealReportFound(self, foundArray)
 			elif data['id'] == 6:
-				serverClients = data['payload']
+				clientsArray = data['payload']
 				dealReportClients(self, clientsArray)
 			elif data['id'] == 7:
 				numberServer = data['payload']
@@ -130,14 +132,17 @@ class CursesThread(threading.Thread):
 			time.sleep(0.5)
 			report.sendJson( 7, 'what number are you on?' )
 			
+			if self._stop == True:
+				sys.exit()
 			clear()
 			print ''
 			print 'Report Thread is now Monitoring'
 			print ''
-			print 'numbers found:', serverFound
+			print 'Numbers found:', serverFound
+			print 'Number of clients:', len(serverClients)
 			print 'Currently on:', serverNumber
 			
-			time.sleep(3)
+			time.sleep(2)
 
 #set up signal handler(s)
 signal.signal(signal.SIGINT, signal_handler)

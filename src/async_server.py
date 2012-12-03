@@ -12,6 +12,7 @@ PORT = 2541          # The same port as used by the server. Default 2541
 #change these values only
 
 #Global Variables
+DEBUG = False
 currNum = 0
 connectionClassList = []
 connectionSocketList = []
@@ -41,7 +42,8 @@ def dealKeepAlive(self, payload):
 #Send them however many they asked for
 def dealRangeReq(self, quantity):
 	global currNum
-	print 'replying to request for', quantity, 'numbers from:', self.addr
+	if DEBUG:
+		print 'replying to request for', quantity, 'numbers from:', self.addr
 	self.send( createJson(self, 2, currNum) )
 	currNum += quantity
 
@@ -52,16 +54,21 @@ def dealNumberFound(self, address, numberFound):
 	perfectNumbersFound.append(numberFound)
 	
 def dealReportFound(self):
-	print 'A Reporter has asked for the numbers we have found.  Sending.'
+	if DEBUG:
+		print 'A Reporter has asked for the numbers we have found.  Sending.'
 	self.send( createJson(self, 5, perfectNumbersFound) )
 
 def dealReportClients(self):
-	print 'A Reporter has asked for our connection List.  Sending.'
-	print 'not implemented yet'
-	#self.send( createJson(self, 6, connectionSocketList) )
+	if DEBUG:
+		print 'A Reporter has asked for our connection List.  Sending.'
+	addrList = []
+	for _socketobject in connectionSocketList:
+		addrList.append( _socketobject.getpeername() )
+	self.send( createJson(self, 6, addrList) )
 
 def dealReportNumber(self):
-	print 'A Reporter has asked for how far we are currently.  Sending.'
+	if DEBUG:
+		print 'A Reporter has asked for how far we are currently.  Sending.'
 	self.send( createJson(self, 7, currNum) )
 
 #Class For handling the event-driven server
