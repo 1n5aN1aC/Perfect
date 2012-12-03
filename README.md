@@ -6,7 +6,7 @@ Joshua David Villwock's Async Perfect Number-Finding Client / Server.
 Usage
 ---------
 To make the documentation:
-*make -f doc
+*make
 
 To run the server:
 *python async_server.py
